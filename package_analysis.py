@@ -55,132 +55,132 @@ if __name__ == '__main__':
         corpus = corpus + filestr
         corpuslist.append(filestr)
 
-    #
-    #
-    # ### Testing NLTK  with test strings ###
-    # print("NLTK test string results")
-    #
-    # now = datetime.datetime.now()
-    # tokenizedlist = word_tokenize(teststring1)
-    # proctime = datetime.datetime.now() - now
-    # print("teststring1 nltk tokens:")
-    # print(tokenizedlist)
-    # print("teststring1 nltk tokenizing time: {}".format(proctime))
-    #
-    # now = datetime.datetime.now()
-    # tokenizedlist = word_tokenize(teststring2)
-    # proctime = datetime.datetime.now() - now
-    # print("teststring2 nltk tokens:")
-    # print(tokenizedlist)
-    # print("teststring2 nltk tokenizing time: {}".format(proctime))
-    #
-    # tokenizedlist = word_tokenize(corpus)
-    # list2file('nltktokenizedwords.txt', tokenizedlist)
-    #
-    # ### Testing spacy with test strings ###
-    #
-    #
-    # print("spacy test string results")
-    #
-    # now = datetime.datetime.now()
-    # doc1 = spnlp(teststring1)
-    # proctime = datetime.datetime.now() - now
-    # tokenizedlist1 = [str(token) for token in doc1]
-    # print("teststring1 spacy tokens:")
-    # print(tokenizedlist1)
-    # print("teststring1 spacy tokenizing time: {}".format(proctime))
-    #
-    # now = datetime.datetime.now()
-    # doc2 = spnlp(teststring2)
-    # proctime = datetime.datetime.now() - now
-    # tokenizedlist2 = [str(token) for token in doc2]
-    # print("teststring2 spacy tokens:")
-    # print(tokenizedlist2)
-    # print("teststring2 spacy tokenizing time: {}".format(proctime))
-    # print("\n\n")
 
-    # ### Testing NLTK  with full corpus ###
-    # print("NLTK corpus results")
+
+    ### Testing NLTK  with test strings ###
+    print("NLTK test string results")
+
+    now = datetime.datetime.now()
+    tokenizedlist = word_tokenize(teststring1)
+    proctime = datetime.datetime.now() - now
+    print("teststring1 nltk tokens:")
+    print(tokenizedlist)
+    print("teststring1 nltk tokenizing time: {}".format(proctime))
+
+    now = datetime.datetime.now()
+    tokenizedlist = word_tokenize(teststring2)
+    proctime = datetime.datetime.now() - now
+    print("teststring2 nltk tokens:")
+    print(tokenizedlist)
+    print("teststring2 nltk tokenizing time: {}".format(proctime))
+
+    tokenizedlist = word_tokenize(corpus)
+    list2file('nltktokenizedwords.txt', tokenizedlist)
+
+    ### Testing spacy with test strings ###
+
+
+    print("spacy test string results")
+
+    now = datetime.datetime.now()
+    doc1 = spnlp(teststring1)
+    proctime = datetime.datetime.now() - now
+    tokenizedlist1 = [str(token) for token in doc1]
+    print("teststring1 spacy tokens:")
+    print(tokenizedlist1)
+    print("teststring1 spacy tokenizing time: {}".format(proctime))
+
+    now = datetime.datetime.now()
+    doc2 = spnlp(teststring2)
+    proctime = datetime.datetime.now() - now
+    tokenizedlist2 = [str(token) for token in doc2]
+    print("teststring2 spacy tokens:")
+    print(tokenizedlist2)
+    print("teststring2 spacy tokenizing time: {}".format(proctime))
+    print("\n\n")
+
+    ### Testing NLTK  with full corpus ###
+    print("NLTK corpus results")
+
+    ### Tokenizing ####
+    now = datetime.datetime.now()
+    tokenizedlist = word_tokenize(corpus)
+    proctime = datetime.datetime.now() - now
+    list2file('nltktokenizedwords.txt', tokenizedlist)
+    print("NLTK corpus tokenizing time: {}".format(proctime))
+
+    #### POS tagging ####
+    now = datetime.datetime.now()
+    postaglist = nltk.pos_tag(tokenizedlist)
+    proctime = datetime.datetime.now() - now
+    print("NLTK corpus POS tagging time: {}".format(proctime))
+    list2file('nltkpostags.txt', postaglist)
+
+    ### Stemming ####
+    ps = PorterStemmer()
+    now = datetime.datetime.now()
+    stemlist = [ps.stem(word) for word in tokenizedlist]
+    proctime = datetime.datetime.now() - now
+    list2file('nltkwordstems.txt', stemlist)
+    print("NLTK corpus stemming time: {}".format(proctime))
+
+
+    ### Parallelizing ####
+    corpdict = {textfiles[i]: corpuslist[i] for i in range(len(textfiles))}
+
+    now = datetime.datetime.now()
+    with mp.Pool() as pool:
+        tokens = pool.map(nltk_pp_toknpos, corpdict.items())
+    proctime = datetime.datetime.now() - now
+    print("NLTK tokenization and POS tagging with parallel processing time: {}".format(proctime))
+    list2file('nltkpptoknpos.txt', tokens)
+
+
+    ### Testing spacy with full corpus ###
+    print("spacy test string results")
 
     #### Tokenizing ####
-    # now = datetime.datetime.now()
-    # tokenizedlist = word_tokenize(corpus)
-    # proctime = datetime.datetime.now() - now
-    # list2file('nltktokenizedwords.txt', tokenizedlist)
-    # print("NLTK corpus tokenizing time: {}".format(proctime))
-    #
-    # #### POS tagging ####
-    # now = datetime.datetime.now()
-    # postaglist = nltk.pos_tag(tokenizedlist)
-    # proctime = datetime.datetime.now() - now
-    # print("NLTK corpus POS tagging time: {}".format(proctime))
-    # list2file('nltkpostags.txt', postaglist)
 
-    #### Stemming ####
-    # ps = PorterStemmer()
-    # now = datetime.datetime.now()
-    # stemlist = [ps.stem(word) for word in tokenizedlist]
-    # proctime = datetime.datetime.now() - now
-    # list2file('nltkwordstems.txt', stemlist)
-    # print("NLTK corpus stemming time: {}".format(proctime))
+    count = 0
+    now = datetime.datetime.now()
+    doclist = []
+    disabled = spnlp.disable_pipes("parser", "tagger", "ner")
+    for corp in corpuslist:
+        doc = spnlp(corp)
+        doclist.append(doc)
+        count = count+1
+        print("corpus {} completed.".format(count))
+    proctime = datetime.datetime.now() - now
+    spacytokenizetime = proctime
+    print("spacy corpus tokenizing time: {}".format(proctime))
 
+    tokenizedlist = []
+    for doc in doclist:
+        for token in doc:
+            tokenizedlist.append(str(token))
 
-    #### Parallelizing ####
-    # corpdict = {textfiles[i]: corpuslist[i] for i in range(len(textfiles))}
-    #
-    # now = datetime.datetime.now()
-    # with mp.Pool() as pool:
-    #     tokens = pool.map(nltk_pp_toknpos, corpdict.items())
-    # proctime = datetime.datetime.now() - now
-    # print("NLTK tokenization and POS tagging with parallel processing time: {}".format(proctime))
-    # list2file('nltkpptoknpos.txt', tokens)
+    list2file("spacytokenized.txt", tokenizedlist)
+    disabled.restore()
 
 
-    # ### Testing spacy with full corpus ###
-    # print("spacy test string results")
-
-    # #### Tokenizing ####
-
-    # count = 0
-    # now = datetime.datetime.now()
-    # doclist = []
-    # disabled = spnlp.disable_pipes("parser", "tagger", "ner")
-    # for corp in corpuslist:
-    #     doc = spnlp(corp)
-    #     doclist.append(doc)
-    #     count = count+1
-    #     print("corpus {} completed.".format(count))
-    # proctime = datetime.datetime.now() - now
-    # spacytokenizetime = proctime
-    # print("spacy corpus tokenizing time: {}".format(proctime))
-    #
-    # tokenizedlist = []
-    # for doc in doclist:
-    #     for token in doc:
-    #         tokenizedlist.append(str(token))
-    #
-    # list2file("spacytokenized.txt", tokenizedlist)
-    # disabled.restore()
-    #
-    #
-    # #### POS tagging ####
-    # disabled = spnlp.disable_pipes("parser", "ner")
-    # now = datetime.datetime.now()
-    # doclist = []
-    # count=0
-    # for corp in corpuslist:
-    #     doc = spnlp(corp)
-    #     doclist.append(doc)
-    #     count = count+1
-    #     print("corpus {} POS tagging completed.".format(count))
-    # proctime = datetime.datetime.now() - now
-    # # cannot disable tokenizer so subtracting tokenized time from tokenized and tagging time
-    # print("spacy corpus POS tagging time: {}".format(proctime-spacytokenizetime))
-    # postaglist = []
-    # for doc in doclist:
-    #     for token in doc:
-    #         postaglist.append(str((token.text, token.pos_)))
-    # list2file('spacypostags.txt', postaglist)
+    #### POS tagging ####
+    disabled = spnlp.disable_pipes("parser", "ner")
+    now = datetime.datetime.now()
+    doclist = []
+    count=0
+    for corp in corpuslist:
+        doc = spnlp(corp)
+        doclist.append(doc)
+        count = count+1
+        print("corpus {} POS tagging completed.".format(count))
+    proctime = datetime.datetime.now() - now
+    # cannot disable tokenizer so subtracting tokenized time from tokenized and tagging time
+    print("spacy corpus POS tagging time: {}".format(proctime-spacytokenizetime))
+    postaglist = []
+    for doc in doclist:
+        for token in doc:
+            postaglist.append(str((token.text, token.pos_)))
+    list2file('spacypostags.txt', postaglist)
 
     #### Parallelizing ####
     corpdict = {textfiles[i]: corpuslist[i] for i in range(len(textfiles))}
