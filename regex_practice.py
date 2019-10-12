@@ -1,5 +1,3 @@
-import nltk
-import spacy
 import os
 import re
 
@@ -18,6 +16,7 @@ for filename in textfiles[0:2]:
 
 
 def parsed2file(name,parsedlist):
+'''Function to write parsed items to text file.'''
     newfile = open(name, "w+")
     for parseditem in parsedlist:
         newfile.write(parseditem + "\n")
