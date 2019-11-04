@@ -50,7 +50,7 @@ for review, rating in sorted(revdf.stars.items())[:10]:
     print("Review: {} Rating: {}:".format(review+1, rating))
     print("  . Most correlated unigrams:\n. {}".format('\n. '.join(unigrams[-N:])))
 
-# fitting and scoring model (Logistic Regression)
+# fitting and scoring model (SVM)
 CV = 5
 model = LinearSVC()
 accuracies = cross_val_score(model, features, labels, scoring='accuracy', cv=CV)
