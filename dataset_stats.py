@@ -4,6 +4,7 @@ import re
 import pandas as pd
 import nltk
 import numpy as np
+import matplotlib.pyplot as plt
 
 # loading corpus (all text files) into string variable
 datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
@@ -47,3 +48,13 @@ words = [w for w in tokens if w.isalpha()]
 avg_wordlen = np.mean([len(word) for word in words])
 
 print("The average word length in yelp reviews is {} letters.".format(avg_wordlen))
+
+# plotting label/rating distribution
+revdf = dfdict['review'].head(500000)
+revdf = revdf[['text','stars']]
+revdf['stars'] = revdf['stars'].astype('category')
+fig = plt.figure(figsize=(8,6))
+revdf.groupby('stars').text.count().plot.bar(ylim=0)
+plt.ylabel('Frequency')
+plt.title('Label Distribution')
+plt.savefig('rating_dist.jpg')
