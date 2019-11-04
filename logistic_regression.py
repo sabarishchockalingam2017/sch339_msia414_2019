@@ -26,7 +26,7 @@ revdf['stars'] = revdf['stars'].astype('category')
 
 # tfdif parameters
 mindf = 5000
-maxdf = 7000
+maxdf = 7000 # set to 1.0 for no limit or 100% of documents
 ngramrange = (1, 2)
 
 # vectorizing corpus
