@@ -1,6 +1,5 @@
 import os
 import json
-import re
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -11,12 +10,8 @@ from sklearn.model_selection import cross_val_score
 # loading corpus (all text files) into string variable
 datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
-# getting names of json files
-jsonfiles = [file for file in os.listdir(datapath) if file.endswith('.json')]
-jsonpatt = re.compile(r'^(.*?).json')
-
 # creating review df with relevant columns
-revfile = open(os.path.join(datapath,'review.json'),mode='r',encoding='utf8')
+revfile = open(os.path.join(datapath, 'review.json'), mode='r', encoding='utf8')
 readlim = 500000
 revlist = [json.loads(next(revfile)) for line in range(readlim)]
 revdf = pd.DataFrame(data=revlist)
