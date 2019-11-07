@@ -2,7 +2,6 @@ import os
 import json
 import re
 import numpy as np
-import pandas as pd
 import fasttext
 from sklearn.model_selection import KFold
 
