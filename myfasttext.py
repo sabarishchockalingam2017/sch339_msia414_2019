@@ -4,6 +4,7 @@ import re
 import numpy as np
 import fasttext
 from sklearn.model_selection import KFold
+import datetime
 
 
 def ft_accuracy(datanlabels, ftmodel):
@@ -47,6 +48,7 @@ kf = KFold(n_splits=5, shuffle=True)
 precisions = []
 recalls = []
 accuracies = []
+proctimes = []
 
 # modelling with cross validation
 for trainindex, testindex in kf.split(revlist):
@@ -73,11 +75,14 @@ for trainindex, testindex in kf.split(revlist):
         ftformat.write('\n')
     ftformat.close()
 
-    # training fasttext model
-    model = fasttext.train_supervised(input=os.path.join(preprocpath, 'ftrevtrain.txt'), lr=1.0)
+    now = datetime.datetime.now()
+    # training fasttext model # set hyper parameters here
+    model = fasttext.train_supervised(input=os.path.join(preprocpath, 'ftrevtrain.txt'), lr=1, dim=300, wordNgrams=3)
 
     # predicting test set and evaluating performance
     testresult = model.test(os.path.join(preprocpath, 'ftrevtest.txt'), k=1)
+    proctime = datetime.datetime.now() - now
+    proctimes.append(proctime)
     precisions.append(testresult[1])
     recalls.append(testresult[2])
     accuracies.append(ft_accuracy(ftrevtest, model))
@@ -85,4 +90,4 @@ for trainindex, testindex in kf.split(revlist):
 print("Mean Precision: ", np.mean(precisions), "Precisions: ", precisions)
 print("Mean Recall: ", np.mean(recalls), "Recalls: ", recalls)
 print("Mean Accuracy: ", np.mean(accuracies), "Accuracies: ", accuracies)
-
+print("Mean Procedure time: ", np.mean(proctimes), "Procedure times: ", proctimes)
