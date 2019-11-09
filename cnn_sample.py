@@ -181,7 +181,7 @@ if __name__ == '__main__':
     import json, multiprocessing
 
     # read the first 200,000 yelp reviews
-    lines = open('review.json', encoding="utf8").readlines()[:500000]
+    lines = open('data/review.json', encoding="utf8").readlines()[:500000]
 
 
     def process_yelp_line(line):
