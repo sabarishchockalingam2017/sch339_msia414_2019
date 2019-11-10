@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import chi2
 from sklearn.svm import LinearSVC
 from sklearn.model_selection import cross_val_score
+import pickle
 
 # loading corpus (all text files) into string variable
 datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
@@ -50,3 +51,5 @@ CV = 5
 model = LinearSVC()
 accuracies = cross_val_score(model, features, labels, scoring='accuracy', cv=CV)
 print("accuracy for this model was: {}".format(accuracies.mean()))
+
+pickle.dump(model,open('./models/svmbest.model','wb'))
