@@ -8,7 +8,7 @@ import datetime
 
 
 def ft_accuracy(datanlabels, ftmodel):
-    """ Function to calculate accuracy for fast text resutls.
+    """ Function to calculate accuracy for fasttext resutls.
     Arguments:
         datanlabels: list of strings startign with '__label__xxx' where xxx is
         the rating, and review text is followed.
