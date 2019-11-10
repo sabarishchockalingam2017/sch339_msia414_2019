@@ -51,5 +51,6 @@ CV = 5
 model = LinearSVC()
 accuracies = cross_val_score(model, features, labels, scoring='accuracy', cv=CV)
 print("accuracy for this model was: {}".format(accuracies.mean()))
-
-pickle.dump(model,open('./models/svmbest.model','wb'))
+model.fit(features, labels)
+pickle.dump(model, open('./models/svmbest.model', 'wb'))
+pickle.dump(tfidf, open('./models/svmbestvect.vect', 'wb'))
