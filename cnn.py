@@ -17,7 +17,7 @@ import numpy as np
 
 
 # model hyper parameters
-EMBEDDING_DIM = 100
+EMBEDDING_DIM =200
 SEQUENCE_LENGTH_PERCENTILE = 90
 n_layers = 2
 hidden_units = 500
@@ -31,10 +31,12 @@ n_filters = 100
 window_size = 8
 dense_activation = "relu"
 l2_penalty = 0.0003
-epochs = 3
-VALIDATION_SPLIT = 0.1
-dictpath = None
-model_file = 'yelp_cnn1.model'
+epochs = 10
+VALIDATION_SPLIT = 0.2
+dictpath = './yelp.dict'
+model_file = './models/yelp_cnnmodel0.model'
+datapath = './data'
+readlim = 500000
 
 
 def token_to_index(token, dictionary):
@@ -56,101 +58,97 @@ def texts_to_indices(text, dictionary):
     return list(filter(None, result))
 
 
-if __name__ == '__main__':
-    # reading in text from file
-    datapath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
-    txtfile = open(os.path.join(datapath,'review.json'), mode='r', encoding='utf8')
+# reading in text from file
+txtfile = open(os.path.join(datapath,'review.json'), mode='r', encoding='utf8')
 
-    readlim = 200000
-    txtlist = [json.loads(next(txtfile)) for line in range(readlim)]
-    txtfile.close()
+txtlist = [json.loads(next(txtfile)) for line in range(readlim)]
+txtfile.close()
 
-    # normalizing and tokenizing
-    tokens = [t['text'].strip(',.&').lower().split() for t in txtlist]
-    tokens = list(map(lambda y: list(filter(lambda x: x.isalpha(), y)), tokens))
-    labels = [t['stars'] for t in txtlist]
-    origlabels = labels
-    labels = keras.utils.to_categorical(labels)
+# normalizing and tokenizing
+tokens = [t['text'].strip(',.&').lower().split() for t in txtlist]
+tokens = list(map(lambda y: list(filter(lambda x: x.isalpha(), y)), tokens))
+labels = [t['stars'] for t in txtlist]
+labels = keras.utils.to_categorical(labels)
 
-    # creating or loading dictionary
-    if dictpath == None:
-        dictionary = gensim.corpora.Dictionary(tokens)
-        dictionary.save('yelp.dict')
-    else:
-        dictionary = gensim.corpora.Dictionary.load(dictpath)
+# creating or loading dictionary
+if dictpath == None:
+    dictionary = gensim.corpora.Dictionary(tokens)
+    dictionary.save('yelp.dict')
+else:
+    dictionary = gensim.corpora.Dictionary.load(dictpath)
 
-    train_texts = tokens
-    train_labels = labels
+train_texts = tokens
+train_labels = labels
 
-    # compute the max sequence length
-    # why do we need to do that? - to ensure the number of words is less than the number of input nodes in the CNN
-    lengths = list(map(lambda x: len(x), train_texts))
-    a = np.array(lengths)
-    MAX_SEQUENCE_LENGTH = int(np.percentile(a, SEQUENCE_LENGTH_PERCENTILE))
-    # convert all texts to dictionary indices
-    train_texts_indices = list(map(lambda x: texts_to_indices(x, dictionary), train_texts))
-    # pad or truncate the texts
-    x_data = pad_sequences(train_texts_indices, maxlen=int(MAX_SEQUENCE_LENGTH))
-    y_data = train_labels
+# compute the max sequence length
+# why do we need to do that? - to ensure the number of words is less than the number of input nodes in the CNN
+lengths = list(map(lambda x: len(x), train_texts))
+a = np.array(lengths)
+MAX_SEQUENCE_LENGTH = int(np.percentile(a, SEQUENCE_LENGTH_PERCENTILE))
+# convert all texts to dictionary indices
+train_texts_indices = list(map(lambda x: texts_to_indices(x, dictionary), train_texts))
+# pad or truncate the texts
+x_data = pad_sequences(train_texts_indices, maxlen=int(MAX_SEQUENCE_LENGTH))
+y_data = train_labels
 
-    # building cnn
-    model = Sequential()
+# building cnn
+model = Sequential()
 
-    model.add(Embedding(len(dictionary)+1,
-                        EMBEDDING_DIM,
-                        input_length=MAX_SEQUENCE_LENGTH))
-    # add drop out for the input layer, why do you think this might help?
-    # drop out typical prevents overfitting, this will help the model learn for instances
-    # when certain words are missing
+model.add(Embedding(len(dictionary)+1,
+                    EMBEDDING_DIM,
+                    input_length=MAX_SEQUENCE_LENGTH))
+# add drop out for the input layer, why do you think this might help?
+# drop out typical prevents overfitting, this will help the model learn for instances
+# when certain words are missing
+model.add(Dropout(dropout_rate))
+
+# add a 1 dimensional conv layer
+# a rectified linear activation unit, returns input if input > 0 else 0
+model.add(Conv1D(filters=n_filters,
+                  kernel_size=window_size,
+                  activation='relu'))
+
+# add a max pooling layer
+model.add(MaxPooling1D(MAX_SEQUENCE_LENGTH - window_size + 1))
+model.add(Flatten())
+
+# add 0 or more fully connected layers with drop out
+for _ in range(n_layers):
     model.add(Dropout(dropout_rate))
-
-    # add a 1 dimensional conv layer
-    # a rectified linear activation unit, returns input if input > 0 else 0
-    model.add(Conv1D(filters=n_filters,
-                     kernel_size=window_size,
-                     activation='relu'))
-
-    # add a max pooling layer
-    model.add(MaxPooling1D(MAX_SEQUENCE_LENGTH - window_size + 1))
-    model.add(Flatten())
-
-    # add 0 or more fully connected layers with drop out
-    for _ in range(n_layers):
-        model.add(Dropout(dropout_rate))
-        model.add(Dense(hidden_units,
-                        activation=dense_activation,
-                        kernel_regularizer=l2(l2_penalty),
-                        bias_regularizer=l2(l2_penalty),
-                        kernel_initializer='glorot_uniform',
-                        bias_initializer='zeros'))
-
-    # add last fully connected layer with softmax activation
-    model.add(Dropout(dropout_rate))
-    model.add(Dense(len(train_labels[0]),
-                    activation='softmax',
+    model.add(Dense(hidden_units,
+                    activation=dense_activation,
                     kernel_regularizer=l2(l2_penalty),
+                    bias_regularizer=l2(l2_penalty),
                     kernel_initializer='glorot_uniform',
                     bias_initializer='zeros'))
 
-    # compile model and specify optimizer
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='rmsprop',
-                  metrics=['accuracy'])
+# add last fully connected layer with softmax activation
+model.add(Dropout(dropout_rate))
+model.add(Dense(len(train_labels[0]),
+                activation='softmax',
+                kernel_regularizer=l2(l2_penalty),
+                kernel_initializer='glorot_uniform',
+                bias_initializer='zeros'))
 
-    print(model.summary())
+# compile model and specify optimizer
+model.compile(loss='categorical_crossentropy',
+              optimizer='rmsprop',
+              metrics=['accuracy'])
 
-    # train model with early stopping
-    early_stopping = EarlyStopping(patience=patience)
-    Y = np.array(y_data)
+print(model.summary())
 
-    fit = model.fit(x_data, Y,
-                    batch_size=batch_size, epochs=epochs,
-                    validation_split=VALIDATION_SPLIT,
-                    verbose=1,
-                    callbacks=[early_stopping])
+# train model with early stopping
+early_stopping = EarlyStopping(patience=patience)
+Y = np.array(y_data)
 
-    print(fit.history['acc'][-1])
+fit = model.fit(x_data, Y,
+                batch_size=batch_size, epochs=epochs,
+                validation_split=VALIDATION_SPLIT,
+                verbose=1,
+                callbacks=[early_stopping])
 
-    if model_file:
-        model.save(model_file)
+print(fit.history['acc'][-1])
+
+if model_file:
+    model.save(model_file)
