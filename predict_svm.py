@@ -1,20 +1,13 @@
-import os
-import json
-import pandas as pd
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_selection import chi2
-from sklearn.svm import LinearSVC
-from sklearn.model_selection import cross_val_score
 import pickle
-import argparse
-
+# input svm model
 modelpath = './models/svmbest.model'
+# input associated tfdif vectorizer to transform text
 vectpath = './models/svmbestvect.vect'
 inputdata = './inputtext.txt'
-outfilepath = './predictions/svmbestout.json'
+outfilepath = './predictions/svmbestout1.json'
 
 if __name__ == '__main__':
+    # loading files and transforming input text
     model = pickle.load(open(modelpath, 'rb'))
     tfidf = pickle.load(open(vectpath, 'rb'))
     transd = tfidf.transform(open(inputdata, 'r'))
@@ -27,3 +20,4 @@ if __name__ == '__main__':
         outfile.write(writestr)
         outfile.write("\n")
     outfile.close()
+    print('Predicitions outputted to: {}'.format(outfilepath))
